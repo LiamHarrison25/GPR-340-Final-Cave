@@ -8,6 +8,15 @@ public class SpawnGrid : MonoBehaviour
     [SerializeField] private float halfWidth = 0.5f;
     [SerializeField] private GameObject cubePrefab;
     [SerializeField] private Material[] materialList;
+    Vector3Int quantize(Vector3 position, float cellSize) {
+        return new Vector3Int(
+            (int)Mathf.Floor(position.x/cellSize),
+            (int)Mathf.Floor(position.y/cellSize),
+            (int)Mathf.Floor(position.z/cellSize));
+    }
+    
+    // change the value to whatever you want to hold
+    private Dictionary<Vector3Int, HashSet<GameObject>> dataGrid;
     
     void Start()
     {
