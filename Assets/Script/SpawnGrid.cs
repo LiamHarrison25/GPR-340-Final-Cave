@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 struct Cell
 {
@@ -18,20 +19,22 @@ struct Chunk
 
 public class SpawnGrid : MonoBehaviour
 {
-    int cellNumber = 0;
-    int chunkNumber = 0;
+    int visableCellNumber = 0;
+    int visableChunkNumber = 0;
+    int totalChunks = 0;
+    int totalCells = 0;
 
     [SerializeField] private int chunkWorldRadius = 10;
     private int totalWorldSizeInChunks;
     private int chunkSize = 10;
     private float cellSize = 1;
-    private int chunkRenderDistance = 2;
+    private int chunkRenderDistance = 3;
 
     [SerializeField] private GameObject cellPrefab;
 
-
     private Dictionary<Vector3Int, Chunk> chunks;
-    //change the value to whatever you want to hold
+
+    private HashSet<Vector3Int> renderedChunks = new HashSet<Vector3Int>();
 
     GameObject player;
 
@@ -53,6 +56,7 @@ public class SpawnGrid : MonoBehaviour
     {
         //needs to exist before adding to it
         chunks = new Dictionary<Vector3Int, Chunk>();
+        HashSet<Vector3Int> newRenderedChunks = new HashSet<Vector3Int>();
 
         //set world Size
         totalWorldSizeInChunks = chunkWorldRadius * 2;
@@ -66,8 +70,10 @@ public class SpawnGrid : MonoBehaviour
     private void Update()
     {
         //RenderGrid();
-        Debug.Log("Cells: " + cellNumber);
-        Debug.Log("Chunks: " + chunkNumber);
+        Debug.Log("Visable Cells: " + visableCellNumber);
+        Debug.Log("Visable Chunks: " + visableChunkNumber);
+        Debug.Log("Total Chunks: " + totalChunks);
+        Debug.Log("Total Cells: " + totalCells);
     }
 
     void CreateGrid()
@@ -85,20 +91,23 @@ public class SpawnGrid : MonoBehaviour
                 for (int z = -chunkWorldRadius; z < chunkWorldRadius; z++)
                 {
                     //chunks
-                    Chunk newChunk = new Chunk();
-                    newChunk.position = QuantizeFloatToInt(new Vector3(x * chunkSize, y * chunkSize, z * chunkSize), chunkSize);
+                    totalChunks++;
 
-                    // Initialize the cells dictionary for the new chunk
-                    newChunk.cells = new Dictionary<Vector3Int, Cell>();
+                    Vector3Int chunkPosition = QuantizeFloatToInt(new Vector3(x * chunkSize, y * chunkSize, z * chunkSize), chunkSize);
+                    Chunk newChunk = new Chunk()
+                    {
+                        position = chunkPosition,
+                        cells = new Dictionary<Vector3Int, Cell>()
+                    };
 
-                    chunks.Add(newChunk.position, newChunk);
+                    chunks.Add(chunkPosition, newChunk);
 
                     //cells //////////////////////////////
                     //Get cell dict from chunk
-                    Dictionary<Vector3Int, Cell> cellList = chunks[new Vector3Int(x, y, z)].cells;
+                    Dictionary<Vector3Int, Cell> cellList = newChunk.cells;
 
                     //create all cells within this chunk
-                    List<Cell> createdCells = CreateCells(new Vector3Int(x, y, z), new Vector3Int(x * chunkSize, y * chunkSize, z * chunkSize));
+                    List<Cell> createdCells = CreateCells(chunkPosition, new Vector3Int(chunkPosition.x * chunkSize, chunkPosition.y * chunkSize, chunkPosition.z * chunkSize));
 
                     //set position to cell dict in chunk
                     foreach (Cell cell in createdCells)
@@ -113,18 +122,20 @@ public class SpawnGrid : MonoBehaviour
     List<Cell> CreateCells(Vector3Int min, Vector3Int max)
     {
         List<Cell> cellList = new List<Cell>();
-        for (int x = min.x; x < max.x; x++)
-        {
-            for (int y = min.y; y < max.y; y++)
-            {
-                for (int z = min.z; z < max.z; z++)
-                {
-                    Cell newCell = new Cell();
 
-                    //set cell position
-                    newCell.position = QuantizeFloatToInt(new Vector3(x, y, z), cellSize);
+        for (int x = min.x; x <= max.x; x++)
+        {
+            for (int y = min.y; y <= max.y; y++)
+            {
+                for (int z = min.z; z <= max.z; z++)
+                {
+                    Cell newCell = new Cell()
+                    {
+                        position = QuantizeFloatToInt(new Vector3(x, y, z), cellSize),
+                    };
 
                     cellList.Add(newCell);
+                    totalCells++;
                 }
             }
         }
@@ -158,7 +169,7 @@ public class SpawnGrid : MonoBehaviour
                 {
                     Chunk thisChunk = chunks[QuantizeFloatToInt(new Vector3(x, y, z), chunkSize)];
                     closeChunks.Add(thisChunk);
-                    chunkNumber++;
+                    visableChunkNumber++;
                 }
             }
         }
@@ -172,13 +183,8 @@ public class SpawnGrid : MonoBehaviour
                 Cell cell = cellPair.Value;
                 var obj = Instantiate(cellPrefab);
                 obj.transform.position = cell.position;
-                cellNumber++;
+                visableCellNumber++;
             }
         }
-    }
-
-    public void OnDrawGismos()
-    {
-
     }
 }
