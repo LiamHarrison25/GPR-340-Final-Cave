@@ -4,18 +4,18 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-struct Cell
-{
-    public bool isVisited;
-    public Vector3Int position;
-    public List<GameObject> stuff;
-}
+//struct Cell
+//{
+//    public bool isVisited;
+//    public Vector3Int position;
+//    public List<GameObject> stuff;
+//}
 
-struct Chunk
-{
-    public Vector3Int position;
-    public Dictionary<Vector3Int, Cell> cells;
-}
+//struct Chunk
+//{
+//    public Vector3Int position;
+//    public Dictionary<Vector3Int, Cell> cells;
+//}
 
 public class SpawnGrid : MonoBehaviour
 {
@@ -24,17 +24,21 @@ public class SpawnGrid : MonoBehaviour
     int totalChunks = 0;
     int totalCells = 0;
 
-    [SerializeField] private int chunkWorldRadius = 10;
+
+    [SerializeField] private int chunkWorldRadius;
     private int totalWorldSizeInChunks;
     private int chunkSize = 10;
-    private float cellSize = 1;
-    private int chunkRenderDistance = 3;
+    private int cellSize = 1;
+    [SerializeField] private int chunkRenderDistance;
 
     [SerializeField] private GameObject cellPrefab;
 
+    private Dictionary<Vector3Int, GameObject> chunkPrefabObjectPool;
     private Dictionary<Vector3Int, Chunk> chunks;
-
-    private HashSet<Vector3Int> renderedChunks = new HashSet<Vector3Int>();
+    HashSet<Chunk> renderedChunks = new HashSet<Chunk>();
+    Vector3Int currentPlayerChunk = Vector3Int.zero;
+    Vector3Int oldPlayerChunk = Vector3Int.zero;
+    
 
     GameObject player;
 
@@ -43,37 +47,38 @@ public class SpawnGrid : MonoBehaviour
         player = GameObject.Find("Player");
     }
 
-    //convert vector3f to vector3int
-    Vector3Int QuantizeFloatToInt(Vector3 position, float cellSize)
-    {
-        return new Vector3Int(
-            (int)Mathf.Floor(position.x / cellSize),
-            (int)Mathf.Floor(position.y / cellSize),
-            (int)Mathf.Floor(position.z / cellSize));
-    }
-
     void Start()
     {
         //needs to exist before adding to it
         chunks = new Dictionary<Vector3Int, Chunk>();
         HashSet<Vector3Int> newRenderedChunks = new HashSet<Vector3Int>();
+        chunkPrefabObjectPool = new Dictionary<Vector3Int, GameObject>();
 
         //set world Size
         totalWorldSizeInChunks = chunkWorldRadius * 2;
 
         //create grid
         CreateGrid();
-
         RenderGrid();
     }
 
     private void Update()
     {
-        //RenderGrid();
-        Debug.Log("Visable Cells: " + visableCellNumber);
-        Debug.Log("Visable Chunks: " + visableChunkNumber);
-        Debug.Log("Total Chunks: " + totalChunks);
-        Debug.Log("Total Cells: " + totalCells);
+        //Debug.Log("Visable Cells: " + visableCellNumber);
+        //Debug.Log("Visable Chunks: " + visableChunkNumber);
+        //Debug.Log("Total Chunks: " + totalChunks);
+        //Debug.Log("Total Cells: " + totalCells);
+
+        ////Calculate position of player
+        //currentPlayerChunk = QuantizeFloatToInt(player.transform.position, chunkSize);
+
+        ////check whether we need to check for chunk changes
+        ////if we haven't moved chunks, do not render new
+        //if (currentPlayerChunk != oldPlayerChunk)
+        //{
+        //    oldPlayerChunk = QuantizeFloatToInt(player.transform.position, chunkSize);
+        //    RenderGrid();
+        //}
     }
 
     void CreateGrid()
@@ -90,16 +95,17 @@ public class SpawnGrid : MonoBehaviour
             {
                 for (int z = -chunkWorldRadius; z < chunkWorldRadius; z++)
                 {
-                    //chunks
+                    //chunks /////////////////////////////////////////////
                     totalChunks++;
 
-                    Vector3Int chunkPosition = QuantizeFloatToInt(new Vector3(x * chunkSize, y * chunkSize, z * chunkSize), chunkSize);
+                    Vector3Int chunkPosition = GridFunctions.QuantizeFloatToInt(new Vector3(x * chunkSize, y * chunkSize, z * chunkSize), chunkSize);
                     Chunk newChunk = new Chunk()
                     {
                         position = chunkPosition,
                         cells = new Dictionary<Vector3Int, Cell>()
                     };
 
+                    //add the chunks to the dic
                     chunks.Add(chunkPosition, newChunk);
 
                     //cells //////////////////////////////
@@ -107,7 +113,7 @@ public class SpawnGrid : MonoBehaviour
                     Dictionary<Vector3Int, Cell> cellList = newChunk.cells;
 
                     //create all cells within this chunk
-                    List<Cell> createdCells = CreateCells(chunkPosition, new Vector3Int(chunkPosition.x * chunkSize, chunkPosition.y * chunkSize, chunkPosition.z * chunkSize));
+                    List<Cell> createdCells = CreateCells(chunkPosition, new Vector3Int(chunkPosition.x + chunkSize, chunkPosition.y + chunkSize, chunkPosition.z + chunkSize));
 
                     //set position to cell dict in chunk
                     foreach (Cell cell in createdCells)
@@ -123,18 +129,25 @@ public class SpawnGrid : MonoBehaviour
     {
         List<Cell> cellList = new List<Cell>();
 
-        for (int x = min.x; x <= max.x; x++)
+        for (int x = min.x; x < max.x; x += cellSize)
         {
-            for (int y = min.y; y <= max.y; y++)
+            for (int y = min.y; y < max.y; y += cellSize)
             {
-                for (int z = min.z; z <= max.z; z++)
+                for (int z = min.z; z < max.z; z += cellSize)
                 {
                     Cell newCell = new Cell()
                     {
-                        position = QuantizeFloatToInt(new Vector3(x, y, z), cellSize),
+                        position = GridFunctions.QuantizeFloatToInt(new Vector3(x, y, z), cellSize),
                     };
 
+                    //add to cell dic inside chunk
                     cellList.Add(newCell);
+
+                    //create actual object into cell object pool
+                    var obj = Instantiate(cellPrefab);
+                    obj.transform.position = newCell.position;
+                    chunkPrefabObjectPool.Add(newCell.position, obj);
+                    
                     totalCells++;
                 }
             }
@@ -145,21 +158,54 @@ public class SpawnGrid : MonoBehaviour
 
     private void RenderGrid()
     {
-        //calculate which chunks are close
-        HashSet<Chunk> closeChunks = new HashSet<Chunk>();
+        //Find closest chunks to player
+        HashSet<Chunk> closeChunks = ReturnClosestChunks(chunkRenderDistance, player.transform.position);
+        HashSet<Chunk> updatedRenderedChunks = new HashSet<Chunk>();
 
-        //use chunk render distance to add to closeChunks
-        Chunk currentChunk = chunks[QuantizeFloatToInt(player.transform.position, chunkSize)];
+        //create list for chunks to move
+        List<Chunk> chunksToMove = new List<Chunk>();
 
-        int xMax = currentChunk.position.x + (chunkRenderDistance * chunkSize);
-        int yMax = currentChunk.position.y + (chunkRenderDistance * chunkSize);
-        int zMax = currentChunk.position.z + (chunkRenderDistance * chunkSize);
+        //Find the rendered chunks that are not inside closest chunks
+        //These are the ones we need to change position
+        foreach(Chunk renderedChunk in renderedChunks)
+        {
+            if (!closeChunks.Contains(renderedChunk))
+            {
+                chunksToMove.Add(renderedChunk);
+            }
+        }
 
-        int xMin = currentChunk.position.x - (chunkRenderDistance * chunkSize);
-        int yMin = currentChunk.position.y - (chunkRenderDistance * chunkSize);
-        int zMin = currentChunk.position.z - (chunkRenderDistance * chunkSize);
+        //Find chunks that are not being rendered
+        //Chunks in closest but not in rendered
+        foreach (Chunk closeChunk in closeChunks)
+        {
+            if (!renderedChunks.Contains(closeChunk))
+            {
+                MoveChunk(closeChunk, closeChunk.position); // Assuming MoveChunk renders the chunk
+            }
+            // Add the chunk to the updated list as it's now rendered
+            updatedRenderedChunks.Add(closeChunk);
+        }
 
-        //add chunks to render
+        //update rendered chunks
+        renderedChunks = updatedRenderedChunks;
+    }
+
+    HashSet<Chunk> ReturnClosestChunks(int renderDistance, Vector3 playerPosition)
+    {
+        HashSet<Chunk> closestChunksList = new HashSet<Chunk>();
+        Chunk playerChunk = chunks[GridFunctions.QuantizeFloatToInt(player.transform.position, chunkSize)];
+
+        //calculate min/max on the number of chunks we need to add
+        int xMax = playerChunk.position.x + (chunkRenderDistance * chunkSize);
+        int yMax = playerChunk.position.y + (chunkRenderDistance * chunkSize);
+        int zMax = playerChunk.position.z + (chunkRenderDistance * chunkSize);
+
+        int xMin = playerChunk.position.x - (chunkRenderDistance * chunkSize);
+        int yMin = playerChunk.position.y - (chunkRenderDistance * chunkSize);
+        int zMin = playerChunk.position.z - (chunkRenderDistance * chunkSize);
+
+        //Find which chunks depending on the position of where we are to render
         //Go through number of chunks in world
         for (int x = xMin; x < xMax; x += chunkSize)
         {
@@ -167,23 +213,44 @@ public class SpawnGrid : MonoBehaviour
             {
                 for (int z = zMin; z < zMax; z += chunkSize)
                 {
-                    Chunk thisChunk = chunks[QuantizeFloatToInt(new Vector3(x, y, z), chunkSize)];
-                    closeChunks.Add(thisChunk);
-                    visableChunkNumber++;
+                    Vector3Int thisChunkPosition = GridFunctions.QuantizeFloatToInt(new Vector3(x, y, z), chunkSize);
+
+                    // If the chunk does not exist, skip to the next iteration
+                    if (!chunks.ContainsKey(thisChunkPosition))
+                    {
+                        continue;
+                    }
+
+                    //add to closest chunks position
+                    Chunk thisChunk = chunks[thisChunkPosition];
+                    closestChunksList.Add(thisChunk);
                 }
             }
         }
 
-        //Use list of closeChunks and render stuff
-        foreach (Chunk chunk in closeChunks)
+
+        return closestChunksList;
+    }
+
+    //moves chunk to another region
+    void MoveChunk(Chunk chunk, Vector3Int newPosition)
+    {
+        chunk.position = newPosition;
+        MoveCells(chunk, newPosition, new Vector3Int(newPosition.x + chunkSize, newPosition.y + chunkSize, newPosition.z + chunkSize));
+    }
+
+    //moves cells to another region, depending on position of chunk
+    void MoveCells(Chunk chunk, Vector3Int min, Vector3Int max)
+    {
+        for (int x = min.x; x < max.x; x += cellSize)
         {
-            //for every cell in cell dict in chunk, render
-            foreach (KeyValuePair<Vector3Int, Cell> cellPair in chunk.cells)
+            for (int y = min.y; y < max.y; y += cellSize)
             {
-                Cell cell = cellPair.Value;
-                var obj = Instantiate(cellPrefab);
-                obj.transform.position = cell.position;
-                visableCellNumber++;
+                for (int z = min.z; z < max.z; z += cellSize)
+                {
+                    //TODO: this
+                    //chunk.cells[new Vector3Int(x,y,z)] = new Vector3Int(x, y, z);
+                }
             }
         }
     }
