@@ -24,9 +24,9 @@ class Chunk
     public Dictionary<Vector3Int, Cell> cells;
 }
 
-class ChunkObjectPool
+class ChunkPrefab
 {
-    public GameObject theGameObject;
+    public GameObject parentObject;
     public Vector3Int position;
     public Dictionary<Vector3Int, GameObject> cells;
 }
