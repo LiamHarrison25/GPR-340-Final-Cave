@@ -470,7 +470,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2017061175}
-  - component: {fileID: 2017061176}
   - component: {fileID: 2017061177}
   m_Layer: 0
   m_Name: GridSpawner
@@ -494,21 +493,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2017061176
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2017061173}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 03d36bb313839d84e9cc4d5d1c27721f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  worldChunkRadius: 4
-  chunkRenderDistanceRadius: 1
-  cellPrefab: {fileID: 4562680253927747265, guid: b8d5b97a254a28b47ac31d01141bfc4f, type: 3}
 --- !u!114 &2017061177
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -524,8 +508,8 @@ MonoBehaviour:
   worldChunkRadius: 2
   chunkRenderDistanceRadius: 0
   cellPrefab: {fileID: 4562680253927747265, guid: b8d5b97a254a28b47ac31d01141bfc4f, type: 3}
-  halfChunkSize: 2
-  cellSize: 1
+  halfChunkSize: 6
+  halfCellSize: 2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
