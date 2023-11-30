@@ -22,14 +22,14 @@ class Cell
 class Chunk
 {
     public Vector3 center;
-    public Vector3Int position;
-    public Dictionary<Vector3, Cell> cells;
+    public Vector3 position;
+    public Dictionary<Vector3Int, Cell> cells;
 }
 
 class ChunkPrefab
 {
     public Vector3 center;
+    public Vector3 position;
     public GameObject parentObject;
-    public Vector3Int position;
     public Dictionary<Vector3Int, GameObject> cells;
 }
