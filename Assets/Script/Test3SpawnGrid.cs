@@ -38,6 +38,7 @@ public class Test3SpawnGrid : MonoBehaviour
 
         GenerateChunks();
         GenerateChunksObjectPool();
+        PositionObjectPool();
     }
 
 
@@ -69,7 +70,7 @@ public class Test3SpawnGrid : MonoBehaviour
                     Chunk newChunk = new Chunk()
                     {
                         center = new Vector3(x, y, z),
-                        position = chunkPosition,
+                        //position = chunkPosition,
                         cells = new Dictionary<Vector3Int, Cell>()
                     };
 
@@ -93,7 +94,7 @@ public class Test3SpawnGrid : MonoBehaviour
                                 Vector3Int cellIndex = GridFunctions.QuantizeFloatToInt(new Vector3(cx, cy, cz), cellSize);
                                 Cell newCell = new Cell()
                                 {
-                                    position = cellPosition,
+                                    center = cellPosition,
 
                                 };
                                 //add to cell dic inside chunk
@@ -112,20 +113,55 @@ public class Test3SpawnGrid : MonoBehaviour
     void GenerateChunksObjectPool()
     {
         Chunk exampleChunk = chunks.First().Value;
+        GameObject chunkHolder = new GameObject();
+        chunkHolder.name = "Chunk holder";
 
         //Loop through all chunks in render distance
         for (int i = 0; i < totalWorldRenderDistance; i++)
         {
+            #region Chunks
             ChunkPrefab newChunkPrefab = new ChunkPrefab()
             {
-                position = exampleChunk.position,
+                center = exampleChunk.center,
                 cells = new Dictionary<Vector3Int, GameObject>()
             };
             //add chunks to object pool
             chunkPrefabs.Add(new Vector3Int(i,0,0), newChunkPrefab);
-        }
 
-        Instantiate(cellPrefab, chunkPrefabs.First().Value.position, Quaternion.identity);
+            var chunk = new GameObject();
+            chunk.transform.parent = chunkHolder.transform;
+            chunk.transform.position = chunkPrefabs.First().Value.center;
+            chunk.name = "Chunk [" + chunk.transform.position.x + ", " + chunk.transform.position.y + ", " + chunk.transform.position.z + "]";
+            newChunkPrefab.parentObject = chunk;
+
+            #endregion Chunks
+
+            #region Cells
+
+            Vector3Int min = new Vector3Int((int)chunk.transform.position.x - halfChunkSize + halfCellSize, (int)chunk.transform.position.y - halfChunkSize + halfCellSize, (int)chunk.transform.position.z - halfChunkSize + halfCellSize);
+            Vector3Int max = new Vector3Int((int)chunk.transform.position.x + halfChunkSize - halfCellSize, (int)chunk.transform.position.y + halfChunkSize - halfCellSize, (int)chunk.transform.position.z + halfChunkSize - halfCellSize);
+
+            for (int cx = min.x; cx <= max.x; cx += cellSize)
+            {
+                for (int cy = min.y; cy <= max.y; cy += cellSize)
+                {
+                    for (int cz = min.z; cz <= max.z; cz += cellSize)
+                    {
+                        //create cell
+                        Vector3Int cellKey = GridFunctions.QuantizeFloatToInt(new Vector3(cx, cy, cz), cellSize);
+
+                        //create cell object pool
+                        var cell = Instantiate(cellPrefab);
+                        cell.transform.position = new Vector3(cx, cy, cz);
+                        cell.transform.SetParent(chunk.transform);
+                        cell.transform.localScale = new Vector3(cellSize, cellSize, cellSize);
+                        chunkPrefabs[new Vector3Int(i, 0, 0)].cells.Add(cellKey, cell);
+                    }
+                }
+            }
+
+            #endregion Cells
+        }
     }
 
     void OnDrawGizmosSelected()
@@ -154,51 +190,19 @@ public class Test3SpawnGrid : MonoBehaviour
             UnityEditor.EditorApplication.isPlaying = false;
         }
     }
-    
+
+    void PositionObjectPool()
+    {
+        ReturnClosestChunks();
+    }
+
+    private HashSet<Vector3Int> ReturnClosestChunks()
+    {
+        HashSet<Vector3Int> closestChunks = new HashSet<Vector3Int>();
+        return closestChunks;
+    }
+
 }
 
-//#region chunks
-//Vector3Int chunkIndex = new Vector3Int(i, 0, 0);
-//Vector3 chunkPosition = new Vector3(0, 0, 0);
 
-//ChunkPrefab newChunkPrefab = new ChunkPrefab()
-//{
-//    position = chunkPosition,
-//    cells = new Dictionary<Vector3Int, GameObject>()
-//};
-////add chunks to object pool
-//chunkPrefabs.Add(chunkIndex, newChunkPrefab);
-//#endregion chunks
-
-//#region cells
-
-////create object pool parent 
-//GameObject chunkParent = new GameObject();
-//chunkParent.transform.position = chunkPosition;
-////chunkParent.name = "Chunk [" + chunkPosition.x + ", " + chunkPosition.y + ", " + chunkPosition.z + "]";
-
-//newChunkPrefab.parentObject = chunkParent;
-
-//Vector3Int min = new Vector3Int(-halfChunkSize, y - halfChunkSize + halfCellSize, z - halfChunkSize + halfCellSize);
-//Vector3Int max = new Vector3Int(chunkPosition.x + chunkSize, chunkPosition.y + chunkSize, chunkPosition.z + chunkSize);
-
-//for (int cx = min.x; cx < max.x; cx += cellSize)
-//{
-//    for (int cy = min.y; cy < max.y; cy += cellSize)
-//    {
-//        for (int cz = min.z; cz < max.z; cz += cellSize)
-//        {
-//            //create cell
-//            Vector3Int cellPosition = GridFunctions.QuantizeFloatToInt(new Vector3(cx, cy, cz), cellSize);
-
-//            //create cell object pool
-//            var obj = Instantiate(cellPrefab, cellPosition, Quaternion.identity);
-//            // obj.transform.position = cellPosition;
-//            obj.transform.SetParent(chunkParent.transform);
-//            newChunkPrefab.cells.Add(cellPosition, obj);
-//        }
-//    }
-//}
-
-//#endregion cells
 
