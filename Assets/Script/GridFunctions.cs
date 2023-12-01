@@ -15,21 +15,21 @@ public static class GridFunctions
 
 class Cell
 {
-    public Vector3 center;
-    public Vector3 position;
+    public Vector3 center; 
+    //public Vector3 position;
 }
 
 class Chunk
 {
-    public Vector3 center;
-    public Vector3 position;
+    public Vector3 center; 
+    //public Vector3 position;
     public Dictionary<Vector3Int, Cell> cells;
 }
 
 class ChunkPrefab
 {
     public Vector3 center;
-    public Vector3 position;
+    //public Vector3 position;
     public GameObject parentObject;
     public Dictionary<Vector3Int, GameObject> cells;
 }
