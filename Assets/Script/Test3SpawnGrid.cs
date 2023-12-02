@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public class Test3SpawnGrid : MonoBehaviour
@@ -34,10 +35,10 @@ public class Test3SpawnGrid : MonoBehaviour
         player = GameObject.Find("Player");
 
         totalWorldChunks = worldChunkRadius * 2;
-        totalWorldChunks = totalWorldChunks * totalWorldChunks * totalWorldChunks;
+        totalWorldChunks = (int)Mathf.Pow(totalWorldChunks, 3);
 
         totalWorldRenderedChunks = chunkRenderDistanceRadius * 2;
-        totalWorldRenderedChunks = totalWorldRenderedChunks * totalWorldRenderedChunks * totalWorldRenderedChunks;
+        totalWorldRenderedChunks = (int)Mathf.Pow(totalWorldRenderedChunks, 3);
 
         chunkPrefabs = new Dictionary<Vector3Int, ChunkPrefab>();
         chunks = new Dictionary<Vector3Int, Chunk>();
@@ -50,7 +51,7 @@ public class Test3SpawnGrid : MonoBehaviour
 
         ShowStatistics();
     }
-
+    
 
     void Update()
     {
@@ -62,8 +63,10 @@ public class Test3SpawnGrid : MonoBehaviour
     {
         int x, y, z;
         int middleChunk = chunkSize;
-        int min = -(worldChunkRadius * (chunkSize + middleChunk));
-        int max = worldChunkRadius * (chunkSize + middleChunk);
+        //int min = -(worldChunkRadius * (chunkSize + middleChunk));
+        //int max = worldChunkRadius * (chunkSize + middleChunk);
+        int min = -(worldChunkRadius * chunkSize) + middleChunk;
+        int max = (worldChunkRadius * chunkSize) + middleChunk;
 
         for (x = min; x <= max; x += chunkSize)
         {
@@ -89,7 +92,7 @@ public class Test3SpawnGrid : MonoBehaviour
                     int middleCell = cellSize;
                     Vector3Int minimum = new Vector3Int(x - halfChunkSize + halfCellSize, y - halfChunkSize + halfCellSize, z - halfChunkSize + halfCellSize);
                     Vector3Int maximum = new Vector3Int(x + halfChunkSize - halfCellSize, y + halfChunkSize - halfCellSize, z + halfChunkSize - halfCellSize);
-                    int cx, cy, cz;
+                    float cx, cy, cz;
                     for (cx = minimum.x; cx <= maximum.x; cx += cellSize)
                     {
                         for (cy = minimum.y; cy <= maximum.y; cy += cellSize)
@@ -105,9 +108,9 @@ public class Test3SpawnGrid : MonoBehaviour
                                 };
                                 //add to cell dic inside chunk
                                 newChunk.cells.Add(cellIndex, newCell);
-                                totalWorldCells++; 
+                                totalWorldCells++; //Statistics
                             }
-                        }
+                        }   
                     }
                     #endregion cells
                 }
@@ -309,8 +312,7 @@ public class Test3SpawnGrid : MonoBehaviour
     void ShowStatistics()
     {
         //single chunk / area of 1 cell
-        totalWorldRenderedCells = (int)(Mathf.Pow(chunkSize, 3) / Mathf.Pow(cellSize, 3) * totalWorldRenderedChunks);
-        //totalWorldCells = (int)()
+        totalWorldRenderedCells = (int)(((Mathf.Pow(chunkSize, 3)) / (Mathf.Pow(cellSize, 3))) * totalWorldRenderedChunks);
 
         Debug.Log("Total world chunks: " + totalWorldChunks);
         Debug.Log("Total world cells: " + totalWorldCells);

@@ -507,8 +507,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   worldChunkRadius: 8
   chunkRenderDistanceRadius: 2
-  halfChunkSize: 4
-  halfCellSize: 2
+  halfChunkSize: 2
+  halfCellSize: 1
   cellPrefab: {fileID: 4562680253927747265, guid: b8d5b97a254a28b47ac31d01141bfc4f, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
