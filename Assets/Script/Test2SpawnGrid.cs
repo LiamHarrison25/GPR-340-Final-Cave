@@ -243,7 +243,7 @@
 //        {
 //            for (int y = yMin; y < yMax; y += chunkSize)
 //            {
-//                for (int z = zMin; z < zMax; z += chunkSize)
+//                for (int z = zMin; z < zMax; z += chunkSize)  
 //                {
 //                    Vector3Int thisChunkPosition = GridFunctions.QuantizeFloatToInt(new Vector3(x, y, z), chunkSize);
 //                    closestChunks.Add(thisChunkPosition);
