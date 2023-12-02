@@ -1,22 +1,25 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public class Test3SpawnGrid : MonoBehaviour
 {
-
     [SerializeField] private int worldChunkRadius; //radius in units of chunks
     [SerializeField] private int chunkRenderDistanceRadius; // radius of chunks that gets rendered. 
-    [SerializeField] private GameObject cellPrefab;
     [SerializeField] private int halfChunkSize; //stores in half size, so we can avoid division
     [SerializeField] private int halfCellSize; //half cell size MUST be divisable inside half chunk size
+    [SerializeField] private GameObject cellPrefab;
 
     private int chunkSize;
     private int cellSize;
-    private int totalWorldChunkSize;
-    private int totalWorldRenderDistance;
+    private int totalWorldRenderedChunks = 0;
+
+    //test statistics
+    private int totalWorldChunks;
+    private int totalWorldRenderedCells;
+    private int totalWorldCells;
 
     GameObject player;
     Vector3 playerOldChunk;
@@ -28,8 +31,13 @@ public class Test3SpawnGrid : MonoBehaviour
     {
         Checks(); //Checks to make sure that the sizes of the chunks and cells lines up correctly. 
 
-        totalWorldRenderDistance = chunkRenderDistanceRadius * 2;
-        totalWorldRenderDistance = totalWorldRenderDistance * totalWorldRenderDistance * totalWorldRenderDistance;
+        player = GameObject.Find("Player");
+
+        totalWorldChunks = worldChunkRadius * 2;
+        totalWorldChunks = totalWorldChunks * totalWorldChunks * totalWorldChunks;
+
+        totalWorldRenderedChunks = chunkRenderDistanceRadius * 2;
+        totalWorldRenderedChunks = totalWorldRenderedChunks * totalWorldRenderedChunks * totalWorldRenderedChunks;
 
         chunkPrefabs = new Dictionary<Vector3Int, ChunkPrefab>();
         chunks = new Dictionary<Vector3Int, Chunk>();
@@ -38,21 +46,20 @@ public class Test3SpawnGrid : MonoBehaviour
 
         GenerateChunks();
         GenerateChunksObjectPool();
-        PositionObjectPool();
+        PositionObjectPool(false);
+
+        ShowStatistics();
     }
 
 
     void Update()
     {
-
+        PositionObjectPool(true);
     }
 
     //Generates the chunks in the world
     void GenerateChunks()
     {
-        //TODO: Generate the chunks
-        //Loop through all chunks in world
-
         int x, y, z;
         int middleChunk = chunkSize;
         int min = -(worldChunkRadius * (chunkSize + middleChunk));
@@ -95,12 +102,10 @@ public class Test3SpawnGrid : MonoBehaviour
                                 Cell newCell = new Cell()
                                 {
                                     center = cellPosition,
-
                                 };
                                 //add to cell dic inside chunk
                                 newChunk.cells.Add(cellIndex, newCell);
-
-                                
+                                totalWorldCells++; 
                             }
                         }
                     }
@@ -117,7 +122,7 @@ public class Test3SpawnGrid : MonoBehaviour
         chunkHolder.name = "Chunk holder";
 
         //Loop through all chunks in render distance
-        for (int i = 0; i < totalWorldRenderDistance; i++)
+        for (int i = 0; i < totalWorldRenderedChunks; i++)
         {
             #region Chunks
             ChunkPrefab newChunkPrefab = new ChunkPrefab()
@@ -133,13 +138,13 @@ public class Test3SpawnGrid : MonoBehaviour
             chunk.transform.position = chunkPrefabs.First().Value.center;
             chunk.name = "Chunk [" + chunk.transform.position.x + ", " + chunk.transform.position.y + ", " + chunk.transform.position.z + "]";
             newChunkPrefab.parentObject = chunk;
-
             #endregion Chunks
 
             #region Cells
-
             Vector3Int min = new Vector3Int((int)chunk.transform.position.x - halfChunkSize + halfCellSize, (int)chunk.transform.position.y - halfChunkSize + halfCellSize, (int)chunk.transform.position.z - halfChunkSize + halfCellSize);
             Vector3Int max = new Vector3Int((int)chunk.transform.position.x + halfChunkSize - halfCellSize, (int)chunk.transform.position.y + halfChunkSize - halfCellSize, (int)chunk.transform.position.z + halfChunkSize - halfCellSize);
+
+            Color randomColor = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), 0.5f);
 
             for (int cx = min.x; cx <= max.x; cx += cellSize)
             {
@@ -156,10 +161,13 @@ public class Test3SpawnGrid : MonoBehaviour
                         cell.transform.SetParent(chunk.transform);
                         cell.transform.localScale = new Vector3(cellSize, cellSize, cellSize);
                         chunkPrefabs[new Vector3Int(i, 0, 0)].cells.Add(cellKey, cell);
+
+                        Renderer renderer = cell.gameObject.GetComponent<Renderer>();
+                        renderer.material.color = randomColor;
+                        totalWorldRenderedCells++;
                     }
                 }
             }
-
             #endregion Cells
         }
     }
@@ -191,18 +199,126 @@ public class Test3SpawnGrid : MonoBehaviour
         }
     }
 
-    void PositionObjectPool()
+    void PositionObjectPool(bool checkForChunkChange)
     {
-        ReturnClosestChunks();
+        //check if player has moved, if so, continue
+        if (checkForChunkChange)
+        {
+            if (!HasPlayerMovedChunks())
+            {
+                return;
+            }
+        }
+        HashSet<Vector3Int> closestChunksKeys = ReturnClosestChunks();
+
+        //create a list of some sort to find chunks to add
+        Stack<Vector3Int> chunkKeysToAdd = new Stack<Vector3Int>();
+
+        //create a list of some sort to find chunks to remove
+        Stack<Vector3Int> chunkKeysToRemove = new Stack<Vector3Int>();
+
+        //list of chunk keys we need to add
+        foreach(Vector3Int closeChunkkey in closestChunksKeys)
+        {
+            //if its not inside our object pool add to list
+            if (!chunkPrefabs.ContainsKey(closeChunkkey))
+            {
+                chunkKeysToAdd.Push(closeChunkkey);
+            }
+        }
+
+        //list of chunk keys we need to remove
+        foreach (var entry in chunkPrefabs)
+        {
+            if (!closestChunksKeys.Contains(entry.Key))
+            {
+                chunkKeysToRemove.Push(entry.Key);
+            }
+        }
+
+        int numChunksChanged = chunkKeysToAdd.Count();
+
+        if(chunkKeysToAdd.Count() != chunkKeysToRemove.Count())
+        {
+            Debug.Log("CHUNKS TO ADD AND CHUNKS TO REMOVE ARE NOT EQUAL! THIS IS A PROBLEMM IN LINE 220");
+        }
+
+        int i;
+        for (i = 0; i < numChunksChanged; i++)
+        {
+            //Removing the chunk
+            Vector3Int removeChunkKey = chunkKeysToRemove.Pop();
+            ChunkPrefab newChunk = chunkPrefabs[removeChunkKey];
+            chunkPrefabs.Remove(removeChunkKey);
+
+            //Adding the chunk
+            Vector3Int addChunkKey = chunkKeysToAdd.Pop();
+            newChunk.center = chunks[addChunkKey].center;
+            newChunk.parentObject.transform.position = chunks[addChunkKey].center; // might be an issue later with vector 3 INT position
+            chunkPrefabs.Add(addChunkKey, newChunk);
+        }
     }
 
     private HashSet<Vector3Int> ReturnClosestChunks()
     {
         HashSet<Vector3Int> closestChunks = new HashSet<Vector3Int>();
+
+        Vector3 playerPosition = player.transform.position;
+        //calculate min/max on the number of chunks we need to add
+        int xMax = (int)playerPosition.x + (chunkRenderDistanceRadius * chunkSize);
+        int yMax = (int)playerPosition.y + (chunkRenderDistanceRadius * chunkSize);
+        int zMax = (int)playerPosition.z + (chunkRenderDistanceRadius * chunkSize);
+        int xMin = (int)playerPosition.x - (chunkRenderDistanceRadius * chunkSize);
+        int yMin = (int)playerPosition.y - (chunkRenderDistanceRadius * chunkSize);
+        int zMin = (int)playerPosition.z - (chunkRenderDistanceRadius * chunkSize);
+
+        //Find which chunks depending on the position of where we are to render
+        //Go through number of chunks in world
+        for (int x = xMin; x < xMax; x += chunkSize)
+        {
+            for (int y = yMin; y < yMax; y += chunkSize)
+            {
+                for (int z = zMin; z < zMax; z += chunkSize)
+                {
+                    Vector3Int thisChunkPosition = GridFunctions.QuantizeFloatToInt(new Vector3(x, y, z), chunkSize);
+                    closestChunks.Add(thisChunkPosition);
+                }
+            }
+        }
+
+        //remember to add player chunk
+        Vector3Int playerChunk = GridFunctions.QuantizeFloatToInt(playerPosition, chunkSize);
+        closestChunks.Add(playerChunk);
+
         return closestChunks;
     }
 
+    bool HasPlayerMovedChunks()
+    {
+        Vector3 playerCurrentChunk = GridFunctions.QuantizeFloatToInt(player.transform.position, chunkSize);
+
+        if (playerOldChunk != playerCurrentChunk)
+        {
+            playerOldChunk = playerCurrentChunk;
+            return true;
+        }
+
+        return false;
+    }
+
+    void ShowStatistics()
+    {
+        //single chunk / area of 1 cell
+        totalWorldRenderedCells = (int)(Mathf.Pow(chunkSize, 3) / Mathf.Pow(cellSize, 3) * totalWorldRenderedChunks);
+        //totalWorldCells = (int)()
+
+        Debug.Log("Total world chunks: " + totalWorldChunks);
+        Debug.Log("Total world cells: " + totalWorldCells);
+
+        Debug.Log("Total rendered chunks: " + totalWorldRenderedChunks);
+        Debug.Log("Total rendered cells: " + totalWorldRenderedCells);
+
+        int testInt = (totalWorldChunks * (int)(Mathf.Pow(chunkSize, 3) / Mathf.Pow(cellSize, 3)));
+        Debug.Log("test: " + testInt);
+    }
 }
-
-
-
