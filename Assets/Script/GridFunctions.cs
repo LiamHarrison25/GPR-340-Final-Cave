@@ -13,23 +13,24 @@ public static class GridFunctions
     }
 }
 
-class Cell
+public class Cell
 {
-    public Vector3 center; 
-    //public Vector3 position;
+    public Vector3 center;
+    public Vector3Int key;
+    public bool isActive = true;
 }
 
-class Chunk
+public class Chunk
 {
     public Vector3 center; 
-    //public Vector3 position;
+    public Vector3Int key;
     public Dictionary<Vector3Int, Cell> cells;
 }
 
-class ChunkPrefab
+public class ChunkPrefab
 {
     public Vector3 center;
-    //public Vector3 position;
+    public Vector3Int key;
     public GameObject parentObject;
     public Dictionary<Vector3Int, GameObject> cells;
 }
