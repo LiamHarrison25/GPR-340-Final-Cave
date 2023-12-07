@@ -75,18 +75,19 @@ public class CaveGenerator : MonoBehaviour
                         if (noiseValue >= threshold) //checks if the noise is above the threshold
                         {
                             cell.isActive = true;
-                            Debug.Log("cell");
+                            //Debug.Log("cell");
                         }
                         else
                         {
                             cell.isActive = false;
-                            Debug.Log("no cell");
+                            //Debug.Log("no cell");
                         }
                     }
                 }
             }
         }
     }
+
     public static float Perlin3D(float x, float y, float z)
     {
         float xy = Mathf.PerlinNoise(x, y);

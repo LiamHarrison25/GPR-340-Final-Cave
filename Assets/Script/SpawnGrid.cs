@@ -60,7 +60,49 @@ public class SpawnGrid : MonoBehaviour
         CaveGeneratorScript.GenerateCaves();
         UpdateCells();
 
-        ShowStatistics();
+        foreach(var chunkPrefab in chunkPrefabs)
+        {
+            foreach(var cellKey in chunkPrefab.Value.cells.Keys)
+            {
+                //check if each cell in prefabs exists in our other dic
+                if (chunks.ContainsKey(chunkPrefab.Key))
+                {
+                    //the chunk we need in dictionary
+                    Chunk dictionaryChunk = chunks[chunkPrefab.Key];
+                    if (dictionaryChunk.cells.ContainsKey(cellKey))
+                    {
+                        //if the chunk cell exists with the cell in prefab cells, print key exists
+                        Debug.Log("Chunk key exists: " + chunkPrefab.Key);
+                        Debug.Log("cell key exists: " + cellKey);
+                        //Debug.Log("key exists");
+                    }
+                    else
+                    {
+                        Debug.Log("Chunk Key does not exist");
+                        //Debug.Log("Chunk Key does not exist + cellKey"  + chunkPrefab.Key);
+                        //Debug.Log("Cell Key does not exist + cellKey" + cellKey);
+                    }
+                }
+                else
+                {
+                    //Debug.Log("Key does not exist: " + chunkPrefabKey);
+                    Debug.Log("Chunk Key does not exist");
+                }
+            }
+        }
+
+        //if (chunks.ContainsKey(chunkPrefabKey))
+        //{
+        //    //Debug.Log("key exists: " + chunkPrefabKey);
+        //    Debug.Log("key exists");
+        //}
+        //else
+        //{
+        //    //Debug.Log("Key does not exist: " + chunkPrefabKey);
+        //    Debug.Log("Key does not exist");
+        //}
+
+        //ShowStatistics();
     }
     
 
@@ -130,12 +172,15 @@ public class SpawnGrid : MonoBehaviour
    
     void GenerateChunksObjectPool()
     {
-        Chunk exampleChunk = chunks.First().Value;
+        //Debug.Log("example chunk key, intial = " + chunks.First().Key);
         GameObject chunkHolder = new GameObject();
         chunkHolder.name = "Chunk holder";
 
+        Chunk exampleChunk = chunks.First().Value;
+
         //Loop through all chunks in render distance
-        for (int i = 0; i < totalWorldRenderedChunks; i++)
+        int i;
+        for (i = 0; i < totalWorldRenderedChunks; i++)
         {
             #region Chunks
             ChunkPrefab newChunkPrefab = new ChunkPrefab()
@@ -144,7 +189,7 @@ public class SpawnGrid : MonoBehaviour
                 cells = new Dictionary<Vector3Int, GameObject>()
             };
             //add chunks to object pool
-            chunkPrefabs.Add(new Vector3Int(i,0,0), newChunkPrefab);
+            chunkPrefabs.Add(new Vector3Int(999999999,i,777777777), newChunkPrefab);
 
             var chunk = new GameObject();
             chunk.transform.parent = chunkHolder.transform;
@@ -158,12 +203,12 @@ public class SpawnGrid : MonoBehaviour
             Vector3Int max = new Vector3Int((int)chunk.transform.position.x + halfChunkSize - halfCellSize, (int)chunk.transform.position.y + halfChunkSize - halfCellSize, (int)chunk.transform.position.z + halfChunkSize - halfCellSize);
 
             Color randomColor = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), 0.5f);
-
-            for (int cx = min.x; cx <= max.x; cx += cellSize)
+            int cx, cy, cz;
+            for (cx = min.x; cx <= max.x; cx += cellSize)
             {
-                for (int cy = min.y; cy <= max.y; cy += cellSize)
+                for (cy = min.y; cy <= max.y; cy += cellSize)
                 {
-                    for (int cz = min.z; cz <= max.z; cz += cellSize)
+                    for (cz = min.z; cz <= max.z; cz += cellSize)
                     {
                         //create cell
                         Vector3Int cellKey = GridFunctions.QuantizeFloatToInt(new Vector3(cx, cy, cz), cellSize);
@@ -173,7 +218,7 @@ public class SpawnGrid : MonoBehaviour
                         cell.transform.position = new Vector3(cx, cy, cz);
                         cell.transform.SetParent(chunk.transform);
                         cell.transform.localScale = new Vector3(cellSize, cellSize, cellSize);
-                        chunkPrefabs[new Vector3Int(i, 0, 0)].cells.Add(cellKey, cell);
+                        chunkPrefabs[new Vector3Int(999999999, i, 777777777)].cells.Add(cellKey, cell);
                         Renderer renderer = cell.gameObject.GetComponent<Renderer>();
                         renderer.material.color = randomColor;
                         totalWorldRenderedCells++;
@@ -275,6 +320,29 @@ public class SpawnGrid : MonoBehaviour
             newChunk.center = chunks[addChunkKey].center;
             newChunk.parentObject.transform.position = chunks[addChunkKey].center; // might be an issue later with vector 3 INT position
             chunkPrefabs.Add(addChunkKey, newChunk);
+
+            //set keys for all cells
+            //use the dictionary that already exists as we know the chunk we need
+            var cellPrefabDict = chunkPrefabs[addChunkKey].cells;
+            var cellDict = chunks[addChunkKey].cells;
+
+            Stack<GameObject> cellPrefabObjectStack = new Stack<GameObject>();
+
+            //grab all keys in cell prefabs, cuz they all need to be changed
+            foreach (var cellPrefab in cellPrefabDict) 
+            {
+                cellPrefabObjectStack.Push(cellPrefab.Value);
+            }
+            cellPrefabDict.Clear();
+
+            //set cell keys correctly:
+            foreach (var cellKey in cellDict.Keys) //Maybe change this from var to gameobject
+            {
+                //steal gameObject
+                GameObject stolenGameobject = cellPrefabObjectStack.Pop();
+
+                cellPrefabDict.Add(cellKey, stolenGameobject);
+            }
         }
     }
 
@@ -342,44 +410,43 @@ public class SpawnGrid : MonoBehaviour
 
     void UpdateCells()
     {
-        int x, y, z;
-        int middleChunk = chunkSize;
-        int min = -(worldChunkRadius * chunkSize) + middleChunk;
-
-        int max = (worldChunkRadius * chunkSize) + middleChunk;
-        for (x = min; x <= max; x += chunkSize)
+        //loop through all rendered chunk prefabs
+        //loop through all rendered cells
+        foreach(var chunkPrefab in chunkPrefabs)
         {
-            for (y = min; y <= max; y += chunkSize)
+            Vector3Int chunkKey = chunkPrefab.Key;
+
+            foreach (var cellPrefabDictionary in chunkPrefab.Value.cells)
             {
-                for (z = min; z <= max; z += chunkSize)
+                //find out if this cell is on or off
+                bool isChunkOn = chunks[chunkKey].cells[cellPrefabDictionary.Key].isActive;
+
+                if (isChunkOn)
                 {
-                    Vector3Int currentChunkKey = GridFunctions.QuantizeFloatToInt(new Vector3(x, y, z), chunkSize);
-
-                    ChunkPrefab chunkPrefab = chunkPrefabs[currentChunkKey];
-                    Chunk chunk = chunks[currentChunkKey];
-
-                    Dictionary<Vector3Int, GameObject> cellsPrefabDic = chunkPrefab.cells;
-                    Dictionary<Vector3Int, Cell> cellsDic = chunk.cells;
-
-                    //loop through all real cells
-                    foreach (Vector3Int key in cellsDic.Keys)
-                    {
-                        //find out if the cell isActive or not inside the dictionary of chunks
-                        Cell theCell = cellsDic[key];
-                        if (theCell.isActive)
-                        {
-                            cellsPrefabDic[key].SetActive(true);
-                            Debug.Log("turning on cell");
-                            Debug.Log("key: " + key + "current chunky" + currentChunkKey);
-                        }   
-                        else
-                        {
-                            cellsPrefabDic[key].SetActive(false);
-                            Debug.Log("turning off cell");
-                        }
-                    }
+                    cellPrefabDictionary.Value.gameObject.SetActive(true);
+                }
+                else
+                {
+                    cellPrefabDictionary.Value.gameObject.SetActive(false);
                 }
             }
         }
     }
 }
+
+//foreach (Vector3Int key in cellsDic.Keys)
+//{
+//    //find out if the cell isActive or not inside the dictionary of chunks
+//    Cell theCell = cellsDic[key];
+//    if (theCell.isActive)
+//    {
+//        cellsPrefabDic[key].SetActive(true);
+//        Debug.Log("turning on cell");
+//        Debug.Log("key: " + key + "current chunky" + currentChunkKey);
+//    }
+//    else
+//    {
+//        cellsPrefabDic[key].SetActive(false);
+//        Debug.Log("turning off cell");
+//    }
+//}
