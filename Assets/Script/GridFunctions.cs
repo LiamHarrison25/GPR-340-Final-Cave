@@ -17,7 +17,7 @@ public class Cell
 {
     public Vector3 center;
     public Vector3Int key;
-    public bool isActive = true;
+    public bool isCellOn = true;
 }
 
 public class Chunk

@@ -67,19 +67,24 @@ public class CaveGenerator : MonoBehaviour
 
                     Dictionary<Vector3Int, Cell> cells = chunk.cells;
 
+                    float px, py, pz;
                     foreach (Cell cell in cells.Values)
                     {
-                        float noiseValue = Perlin3D(Mathf.Abs(x * noiseScale), Mathf.Abs(y * noiseScale), Mathf.Abs(z * noiseScale));
+                        px = (cell.center.x - min) * noiseScale;
+                        py = (cell.center.y - min) * noiseScale;
+                        pz = (cell.center.z - min) * noiseScale;
+
+                        float noiseValue = Perlin3D(px, py, pz);
                         //Debug.Log("noise value: " + noiseValue);
 
                         if (noiseValue >= threshold) //checks if the noise is above the threshold
                         {
-                            cell.isActive = true;
+                            cell.isCellOn = true;
                             //Debug.Log("cell");
                         }
                         else
                         {
-                            cell.isActive = false;
+                            cell.isCellOn = false;
                             //Debug.Log("no cell");
                         }
                     }

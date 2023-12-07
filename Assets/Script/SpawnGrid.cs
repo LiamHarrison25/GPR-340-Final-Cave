@@ -255,12 +255,13 @@ public class SpawnGrid : MonoBehaviour
             UnityEditor.EditorApplication.isPlaying = false;
         }
 
-        if(worldChunkRadius == chunkRenderDistanceRadius)
+        if(chunkRenderDistanceRadius >= worldChunkRadius)
         {
-            Debug.LogError("worldChunkRadius cannot be the same number as chunkRenderDistanceRadius");
+            Debug.LogError("worldChunkRadius must be larger than chunkWorldRenderDistance");
             Application.Quit();
             UnityEditor.EditorApplication.isPlaying = false;
         }
+
     }
 
     void PositionObjectPool(bool checkForChunkChange)
@@ -416,18 +417,21 @@ public class SpawnGrid : MonoBehaviour
         {
             Vector3Int chunkKey = chunkPrefab.Key;
 
-            foreach (var cellPrefabDictionary in chunkPrefab.Value.cells)
+            Dictionary<Vector3Int, GameObject> cellDict = chunkPrefab.Value.cells;
+
+            foreach (var cell in cellDict)
             {
                 //find out if this cell is on or off
-                bool isChunkOn = chunks[chunkKey].cells[cellPrefabDictionary.Key].isActive;
+                Cell worldDictionaryCell = chunks[chunkKey].cells[cell.Key];
+                bool isCellOn = worldDictionaryCell.isCellOn;
 
-                if (isChunkOn)
+                if (isCellOn)
                 {
-                    cellPrefabDictionary.Value.gameObject.SetActive(true);
+                    cell.Value.gameObject.SetActive(true);
                 }
                 else
                 {
-                    cellPrefabDictionary.Value.gameObject.SetActive(false);
+                    cell.Value.gameObject.SetActive(false);
                 }
             }
         }
