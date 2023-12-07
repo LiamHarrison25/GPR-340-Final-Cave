@@ -75,18 +75,9 @@ public class CaveGenerator : MonoBehaviour
                         pz = (cell.center.z - min) * noiseScale;
 
                         float noiseValue = Perlin3D(px, py, pz);
-                        //Debug.Log("noise value: " + noiseValue);
 
-                        if (noiseValue >= threshold) //checks if the noise is above the threshold
-                        {
-                            cell.isCellOn = true;
-                            //Debug.Log("cell");
-                        }
-                        else
-                        {
-                            cell.isCellOn = false;
-                            //Debug.Log("no cell");
-                        }
+                        //checks if the noise is above the threshold
+                        cell.isCellOn = noiseValue >= threshold;
                     }
                 }
             }

@@ -556,9 +556,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9c0f0942fc47494cb32715bdc09bf60, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  worldChunkRadius: 7
-  chunkRenderDistanceRadius: 6
-  halfChunkSize: 2
+  worldChunkRadius: 6
+  chunkRenderDistanceRadius: 5
+  halfChunkSize: 3
   halfCellSize: 1
   cellPrefab: {fileID: 4562680253927747265, guid: b8d5b97a254a28b47ac31d01141bfc4f, type: 3}
 --- !u!114 &2017061178
@@ -573,7 +573,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 398ae8c5f9cb16f469cbfa95d1cc6fb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  noiseScale: 0.1
+  noiseScale: 0.14
   threshold: 0.5
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
