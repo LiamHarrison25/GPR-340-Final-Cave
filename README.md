@@ -4,7 +4,7 @@ TODO: Add detection for world borders. (Player moves past world size)
 <br />
 TODO: Change the objects to bigger meshes to fix fps issue.
 <br />
-TODO: fix the noise duplication with negative values by using multi-octave Perlin
+TODO: Tolstenko Proof the project
 <br />
-TODO: fix it
+Idea: If meshes don't work, do fps fix using nearest neighbors. Active if a neighbor is missing.  
 <br />
