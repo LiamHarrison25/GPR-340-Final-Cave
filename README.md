@@ -2,7 +2,7 @@
 
 TODO: Add detection for world borders. (Player moves past world size)
 <br />
-TODO: Change the objects to bigger meshes to fix fps issue.
+TODO: Change the objects to bigger meshes to fix fps issue. Merge a y axis stack of meshes (minecraft style)
 <br />
 TODO: Tolstenko Proof the project
 <br />
