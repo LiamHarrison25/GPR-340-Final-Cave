@@ -340,8 +340,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   blockPrefab: {fileID: 4562680253927747265, guid: b8d5b97a254a28b47ac31d01141bfc4f, type: 3}
   chunkSize: 20
-  noiseScale: 2.22
-  threshold: 0.5
+  noiseScale: 0.01
+  threshold: 0.45
   material: {fileID: 2100000, guid: b02098e520ac3ca4e93dd9418f13bf84, type: 2}
   sphere: 0
 --- !u!4 &1241637353
@@ -556,9 +556,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9c0f0942fc47494cb32715bdc09bf60, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  worldChunkRadius: 6
-  chunkRenderDistanceRadius: 5
-  halfChunkSize: 3
+  worldChunkRadius: 16
+  chunkRenderDistanceRadius: 15
+  halfChunkSize: 1
   halfCellSize: 1
   cellPrefab: {fileID: 4562680253927747265, guid: b8d5b97a254a28b47ac31d01141bfc4f, type: 3}
 --- !u!114 &2017061178
@@ -573,8 +573,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 398ae8c5f9cb16f469cbfa95d1cc6fb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  noiseScale: 0.14
-  threshold: 0.5
+  noiseScale: 0.033
+  threshold: 0.45
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

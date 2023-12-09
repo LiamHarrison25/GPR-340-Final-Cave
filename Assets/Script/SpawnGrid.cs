@@ -72,15 +72,12 @@ public class SpawnGrid : MonoBehaviour
                     if (dictionaryChunk.cells.ContainsKey(cellKey))
                     {
                         //if the chunk cell exists with the cell in prefab cells, print key exists
-                        Debug.Log("Chunk key exists: " + chunkPrefab.Key);
-                        Debug.Log("cell key exists: " + cellKey);
-                        //Debug.Log("key exists");
+                        //Debug.Log("Chunk key exists: " + chunkPrefab.Key);
+                        //Debug.Log("cell key exists: " + cellKey);
                     }
                     else
                     {
                         Debug.Log("Chunk Key does not exist");
-                        //Debug.Log("Chunk Key does not exist + cellKey"  + chunkPrefab.Key);
-                        //Debug.Log("Cell Key does not exist + cellKey" + cellKey);
                     }
                 }
                 else
@@ -90,18 +87,6 @@ public class SpawnGrid : MonoBehaviour
                 }
             }
         }
-
-        //if (chunks.ContainsKey(chunkPrefabKey))
-        //{
-        //    //Debug.Log("key exists: " + chunkPrefabKey);
-        //    Debug.Log("key exists");
-        //}
-        //else
-        //{
-        //    //Debug.Log("Key does not exist: " + chunkPrefabKey);
-        //    Debug.Log("Key does not exist");
-        //}
-
         //ShowStatistics();
     }
     
@@ -229,15 +214,15 @@ public class SpawnGrid : MonoBehaviour
         }
     }
 
-    void OnDrawGizmosSelected()
-    {
-        foreach (var entry in chunks)
-        {
-            Gizmos.color = new Color(1f, 0f, 0f, 1f);
-            Gizmos.DrawWireCube((new Vector3(entry.Value.center.x, entry.Value.center.y, entry.Value.center.z)),
-                new Vector3(chunkSize, chunkSize, chunkSize));
-        }
-    }
+    //void OnDrawGizmosSelected()
+    //{
+    //    foreach (var entry in chunks)
+    //    {
+    //        Gizmos.color = new Color(1f, 0f, 0f, 1f);
+    //        Gizmos.DrawWireCube((new Vector3(entry.Value.center.x, entry.Value.center.y, entry.Value.center.z)),
+    //            new Vector3(chunkSize, chunkSize, chunkSize));
+    //    }
+    //}
 
     private void Checks()
     {
@@ -264,7 +249,7 @@ public class SpawnGrid : MonoBehaviour
 
     }
 
-    void PositionObjectPool(bool checkForChunkChange)
+    public void PositionObjectPool(bool checkForChunkChange)
     {
         //check if player has moved, if so, continue
         if (checkForChunkChange)
@@ -409,7 +394,7 @@ public class SpawnGrid : MonoBehaviour
         Debug.Log("test: " + testInt);
     }
 
-    void UpdateCells()
+    public void UpdateCells()
     {
         //loop through all rendered chunk prefabs
         //loop through all rendered cells

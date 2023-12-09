@@ -22,25 +22,22 @@ public class CaveGenerator : MonoBehaviour
 
     private void Start()
     {
-        //Debug.Log(Perlin3D(4f * noiseScale, 4f * noiseScale, 4f * noiseScale));
-        //Debug.Log(Perlin3D(7f * noiseScale, 7f * noiseScale, 7f * noiseScale));
-        //Debug.Log(Perlin3D(5f * noiseScale, 3f * noiseScale, 8f * noiseScale));
-        //int x, y, z;
-        //int min = -50;
-        //int max = 50;
-        //for (x = min; x <= max; x += 1)
-        //{
-        //    for (y = min; y <= max; y += 1)
-        //    {
-        //        for (z = min; z <= max; z += 1)
-        //        {
-        //            float noiseValue = Perlin3D(Mathf.Abs(x * noiseScale), Mathf.Abs(y * noiseScale), Mathf.Abs(z * noiseScale));
-        //            Debug.Log("noise value: " + noiseValue);
-        //        }
-        //    }
-        //}
-    }
         
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.G))
+        {
+            //generate new caves
+            Debug.Log("updating cells");
+            GenerateCaves();
+            SpawnGridScript.PositionObjectPool(false);
+            SpawnGridScript.UpdateCells();
+        }
+    }
+
+
 
     public void GenerateCaves()
     {
@@ -55,6 +52,8 @@ public class CaveGenerator : MonoBehaviour
         int min = -(worldChunkRadius * chunkSize) + middleChunk;
         int max = (worldChunkRadius * chunkSize) + middleChunk;
 
+        int dif = (worldChunkRadius * chunkSize);
+
         for (x = min; x <= max; x += chunkSize)
         {
             for (y = min; y <= max; y += chunkSize)
@@ -67,23 +66,54 @@ public class CaveGenerator : MonoBehaviour
 
                     Dictionary<Vector3Int, Cell> cells = chunk.cells;
 
-                    float px, py, pz;
+                    float pxShifted = 0;
+                    float pyShifted = 0;
+                    float pzShifted = 0;
+
                     foreach (Cell cell in cells.Values)
                     {
-                        px = (cell.center.x - min) * noiseScale;
-                        py = (cell.center.y - min) * noiseScale;
-                        pz = (cell.center.z - min) * noiseScale;
+                        //set all positive values to be double
+                        if (cell.center.x >= 0f)
+                        {
+                            pxShifted = cell.center.x + dif;
+                        }
+                        else
+                        {
+                            pxShifted = Mathf.Abs(cell.center.x);
+                        }
 
-                        float noiseValue = Perlin3D(px, py, pz);
+                        if (cell.center.y >= 0f)
+                        {
+                            pyShifted = cell.center.y + dif;
+                        }
+                        else
+                        {
+                            pyShifted = Mathf.Abs(cell.center.y);
+                        }
+
+                        if (cell.center.z >= 0f)
+                        {
+                            pzShifted = cell.center.z + dif;
+                        }
+                        else
+                        {
+                            pzShifted = Mathf.Abs(cell.center.z);
+                        }
+
+                        float noiseValue = Perlin3D(pxShifted * noiseScale, pyShifted * noiseScale, pzShifted * noiseScale);
 
                         //checks if the noise is above the threshold
                         cell.isCellOn = noiseValue >= threshold;
+
+
+                        //other noise function:
+                        //float noiseValue = Perlin3D(cell.center.x * noiseScale, cell.center.y * noiseScale, cell.center.z * noiseScale);
+
                     }
                 }
             }
         }
     }
-
     public static float Perlin3D(float x, float y, float z)
     {
         float xy = Mathf.PerlinNoise(x, y);
