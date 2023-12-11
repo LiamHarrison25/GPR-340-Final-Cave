@@ -13,16 +13,9 @@ public class CaveGenerator : MonoBehaviour
     [SerializeField, Range(0, 1)]
     private float threshold = .5f;
 
-    // Start is called before the first frame update
-
     private void Awake()
     {
         SpawnGridScript = this.gameObject.GetComponent<SpawnGrid>();
-    }
-
-    private void Start()
-    {
-        
     }
 
     private void Update()
@@ -38,7 +31,11 @@ public class CaveGenerator : MonoBehaviour
     }
 
 
-
+    /// <summary>
+    ///
+    /// This function calls Perlin3D to generate noise to make a cave.
+    /// 
+    /// </summary>
     public void GenerateCaves()
     {
         int worldChunkRadius = SpawnGridScript.worldChunkRadius;
@@ -66,9 +63,7 @@ public class CaveGenerator : MonoBehaviour
 
                     Dictionary<Vector3Int, Cell> cells = chunk.cells;
 
-                    float pxShifted = 0;
-                    float pyShifted = 0;
-                    float pzShifted = 0;
+                    float pxShifted = 0; float pyShifted = 0; float pzShifted = 0;
 
                     foreach (Cell cell in cells.Values)
                     {
@@ -104,18 +99,24 @@ public class CaveGenerator : MonoBehaviour
 
                         //checks if the noise is above the threshold
                         cell.isCellOn = noiseValue >= threshold;
-
-
-                        //other noise function:
-                        //float noiseValue = Perlin3D(cell.center.x * noiseScale, cell.center.y * noiseScale, cell.center.z * noiseScale);
-
                     }
                 }
             }
         }
     }
+
+    /// <summary>
+    ///
+    /// This function converts the 2D perlin noise into 3D noise
+    /// 
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="z"></param>
+    /// <returns></returns>
     public static float Perlin3D(float x, float y, float z)
     {
+        //Take all possible combonations of x, y and z and take the average perlin noise
         float xy = Mathf.PerlinNoise(x, y);
         float yz = Mathf.PerlinNoise(y, z);
         float xz = Mathf.PerlinNoise(x, z);

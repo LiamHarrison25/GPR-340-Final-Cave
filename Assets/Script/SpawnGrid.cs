@@ -1,17 +1,16 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public class SpawnGrid : MonoBehaviour
 {
-    public int worldChunkRadius;  //radius in units of chunks
-    [SerializeField] private int chunkRenderDistanceRadius; // radius of chunks that gets rendered. 
+    public int worldChunkRadius;  // total world radius in units of chunks
+    [SerializeField] private int chunkRenderDistanceRadius; // radius of chunks that gets rendered around the player
     public int halfChunkSize;  //stores in half size, so we can avoid division
-    public int halfCellSize;  //half cell size MUST be divisable inside half chunk size
+    public int halfCellSize;  //half cell size MUST be divisible inside half chunk size
     [SerializeField] private GameObject cellPrefab;
+
+    [SerializeField] private bool isStatisticsEnabled = false;
 
     private int chunkSize;
     private int cellSize;
@@ -69,42 +68,40 @@ public class SpawnGrid : MonoBehaviour
                 {
                     //the chunk we need in dictionary
                     Chunk dictionaryChunk = chunks[chunkPrefab.Key];
-                    if (dictionaryChunk.cells.ContainsKey(cellKey))
-                    {
-                        //if the chunk cell exists with the cell in prefab cells, print key exists
-                        //Debug.Log("Chunk key exists: " + chunkPrefab.Key);
-                        //Debug.Log("cell key exists: " + cellKey);
-                    }
-                    else
+                    if (!dictionaryChunk.cells.ContainsKey(cellKey))
                     {
                         Debug.Log("Chunk Key does not exist");
                     }
                 }
                 else
                 {
-                    //Debug.Log("Key does not exist: " + chunkPrefabKey);
                     Debug.Log("Chunk Key does not exist");
                 }
             }
         }
-        //ShowStatistics();
+        //Only occurs if the user wants to show the statistics
+        if (isStatisticsEnabled) ShowStatistics();
     }
     
-
     void Update()
     {
         PositionObjectPool(true);
-        //CheckIfPlayerIsInGrid();
     }
 
-    //Generates the chunks in the world
+    /// <summary>
+    ///
+    /// This function generates the chunks.
+    /// These are the chunk objects, not the Unity Object Chunks.
+    /// 
+    /// </summary>
     void GenerateChunks()
     {
-        int x, y, z;
+        //create the minimum and maximum positions of where the chunk should spawn (includes negative values in unity world grid)
         int middleChunk = chunkSize;
         int min = -(worldChunkRadius * chunkSize) + middleChunk; //add middle chunk to fix grid alignment issue
         int max = (worldChunkRadius * chunkSize) + middleChunk;
 
+        int x, y, z;
         for (x = min; x <= max; x += chunkSize)
         {
             for (y = min; y <= max; y += chunkSize)
@@ -121,7 +118,6 @@ public class SpawnGrid : MonoBehaviour
                         cells = new Dictionary<Vector3Int, Cell>()
                     };
 
-                    //this is specifically for object pool
                     chunks.Add(chunkIndex, newChunk);
                     #endregion chunks
 
@@ -156,9 +152,15 @@ public class SpawnGrid : MonoBehaviour
         }
     }
    
+    /// <summary>
+    ///
+    /// This function creates the cells in each of the chunks.
+    /// The positions of these cells are initially set to junk
+    /// 
+    /// </summary>
     void GenerateChunksObjectPool()
     {
-        //Debug.Log("example chunk key, intial = " + chunks.First().Key);
+        //Debug.Log("example chunk key, initial = " + chunks.First().Key);
         GameObject chunkHolder = new GameObject();
         chunkHolder.name = "Chunk holder";
 
@@ -177,6 +179,7 @@ public class SpawnGrid : MonoBehaviour
             //add chunks to object pool
             chunkPrefabs.Add(new Vector3Int(999999999,i,777777777), newChunkPrefab);
 
+            //create new Chunk, to swap out the old
             var chunk = new GameObject();
             chunk.transform.parent = chunkHolder.transform;
             chunk.transform.position = chunkPrefabs.First().Value.center;
@@ -215,6 +218,11 @@ public class SpawnGrid : MonoBehaviour
         }
     }
 
+    /// <summary>
+    ///
+    /// This function draws a grid that displays the total world size in chunks
+    /// 
+    /// </summary>
     void OnDrawGizmosSelected()
     {
         foreach (var entry in chunks)
@@ -225,6 +233,12 @@ public class SpawnGrid : MonoBehaviour
         }
     }
 
+    /// <summary>
+    ///
+    /// This function ensures that the user inputs correct values into the serialized fields
+    /// If invalid values are inputted, the program will quit and send an error
+    /// 
+    /// </summary>
     private void Checks()
     {
         if (halfChunkSize % halfCellSize != 0)
@@ -244,12 +258,18 @@ public class SpawnGrid : MonoBehaviour
         if (chunkRenderDistanceRadius >= worldChunkRadius)
         {
             Debug.LogError("worldChunkRadius must be larger than chunkWorldRenderDistance");
-            Application.Quit();
+            Application.Quit(1);
             UnityEditor.EditorApplication.isPlaying = false;
         }
 
     }
 
+    /// <summary>
+    ///
+    /// This function moves the chunks and cells to their correct positions.
+    /// 
+    /// </summary>
+    /// <param name="checkForChunkChange"></param>
     public void PositionObjectPool(bool checkForChunkChange)
     {
         CheckIfPlayerIsInGrid();
@@ -293,7 +313,7 @@ public class SpawnGrid : MonoBehaviour
 
         if(chunkKeysToAdd.Count() != chunkKeysToRemove.Count())
         {
-            Debug.Log("CHUNKS TO ADD AND CHUNKS TO REMOVE ARE NOT EQUAL! THIS IS A PROBLEMM IN LINE 220");
+            Debug.Log("CHUNKS TO ADD AND CHUNKS TO REMOVE ARE NOT EQUAL! THIS IS A PROBLEM IN POSITION GAME OBJECT");
         }
 
         int i;
@@ -317,6 +337,9 @@ public class SpawnGrid : MonoBehaviour
             newChunk.parentObject.transform.position = chunks[addChunkKey].center; // might be an issue later with vector 3 INT position
             chunkPrefabs.Add(addChunkKey, newChunk);
 
+            //automatically rename the chunk depending on where it is in the hierarchy
+            newChunk.parentObject.name = "Chunk [" + addChunkKey.x + ", " + addChunkKey.y + ", " + addChunkKey.z + "]";
+
             //set keys for all cells
             //use the dictionary that already exists as we know the chunk we need
             var cellPrefabDict = chunkPrefabs[addChunkKey].cells;
@@ -336,12 +359,18 @@ public class SpawnGrid : MonoBehaviour
             {
                 //steal gameObject
                 GameObject stolenGameobject = cellPrefabObjectStack.Pop();
-
                 cellPrefabDict.Add(cellKey, stolenGameobject);
             }
         }
     }
 
+
+    /// <summary>
+    ///
+    /// This function returns the closest chunks to the player GameObject
+    /// 
+    /// </summary>
+    /// <returns></returns>
     private HashSet<Vector3Int> ReturnClosestChunks()
     {
         HashSet<Vector3Int> closestChunks = new HashSet<Vector3Int>();
@@ -376,6 +405,12 @@ public class SpawnGrid : MonoBehaviour
         return closestChunks;
     }
 
+    /// <summary>
+    ///
+    /// This function detects if the player has moved chunks
+    /// 
+    /// </summary>
+    /// <returns></returns>
     bool HasPlayerMovedChunks()
     {
         Vector3 playerCurrentChunk = GridFunctions.QuantizeFloatToInt(player.transform.position, chunkSize);
@@ -389,6 +424,11 @@ public class SpawnGrid : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    ///
+    /// Optional function that will log how many of each object there is in the scene
+    /// 
+    /// </summary>
     void ShowStatistics()
     {
         //single chunk / area of 1 cell
@@ -404,6 +444,12 @@ public class SpawnGrid : MonoBehaviour
         Debug.Log("test: " + testInt);
     }
 
+
+    /// <summary>
+    ///
+    /// Function that detects if a cell should be turned on or off
+    /// 
+    /// </summary>
     public void UpdateCells()
     {
         //loop through all rendered chunk prefabs
@@ -419,19 +465,18 @@ public class SpawnGrid : MonoBehaviour
                 //find out if this cell is on or off
                 Cell worldDictionaryCell = chunks[chunkKey].cells[cell.Key];
                 bool isCellOn = worldDictionaryCell.isCellOn;
-
-                if (isCellOn)
-                {
-                    cell.Value.gameObject.SetActive(true);
-                }
-                else
-                {
-                    cell.Value.gameObject.SetActive(false);
-                }
+                cell.Value.gameObject.SetActive(isCellOn);
             }
         }
     }
 
+
+    /// <summary>
+    ///
+    /// Function that checks if the player is in the grid.
+    /// Used for preventing the player from getting outside the world border
+    /// 
+    /// </summary>
     private void CheckIfPlayerIsInGrid()
     {
         //if key doesn't exist
@@ -439,39 +484,21 @@ public class SpawnGrid : MonoBehaviour
 
         Vector3Int upCheck = Vector3Int.one * chunkRenderDistanceRadius;
         
-        if (chunks.TryGetValue(playerPos, out Chunk x)) 
+        if (!chunks.TryGetValue(playerPos, out Chunk x)) 
         {
-            Debug.Log("Is in grid");
-        }
-        else
-        {
-            Debug.Log(playerPos);
-            recallPlayerToLastChunk();
+            RecallPlayerToLastChunk();
         }
     }
 
-    private void recallPlayerToLastChunk()
+
+    /// <summary>
+    ///
+    /// Function that moves the player back to their previous chunk
+    /// 
+    /// </summary>
+    private void RecallPlayerToLastChunk()
     {
         player.transform.position = playerOldChunk;
         Debug.Log("Moved player back");
     }
 }
-
-
-
-//foreach (Vector3Int key in cellsDic.Keys)
-//{
-//    //find out if the cell isActive or not inside the dictionary of chunks
-//    Cell theCell = cellsDic[key];
-//    if (theCell.isActive)
-//    {
-//        cellsPrefabDic[key].SetActive(true);
-//        Debug.Log("turning on cell");
-//        Debug.Log("key: " + key + "current chunky" + currentChunkKey);
-//    }
-//    else
-//    {
-//        cellsPrefabDic[key].SetActive(false);
-//        Debug.Log("turning off cell");
-//    }
-//}

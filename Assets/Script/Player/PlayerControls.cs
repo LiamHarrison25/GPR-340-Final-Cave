@@ -73,6 +73,12 @@ public class PlayerControls : MonoBehaviour
         transform.position += desiredMoveDirection;
     }
 
+    /// <summary>
+    ///
+    /// This function applies force upwards when the player hits space
+    /// 
+    /// </summary>
+    /// <param name="context"></param>
     private void Jump(InputAction.CallbackContext context)
     {
         rb.AddForce(new Vector3(0, 8, 0), ForceMode.Impulse);
