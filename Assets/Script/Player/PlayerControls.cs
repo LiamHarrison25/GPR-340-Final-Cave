@@ -75,6 +75,6 @@ public class PlayerControls : MonoBehaviour
 
     private void Jump(InputAction.CallbackContext context)
     {
-        rb.AddForce(new Vector3(0, 3, 0), ForceMode.Impulse);
+        rb.AddForce(new Vector3(0, 8, 0), ForceMode.Impulse);
     }
 }

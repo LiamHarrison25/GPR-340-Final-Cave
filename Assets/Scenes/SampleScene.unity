@@ -352,10 +352,10 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
+  m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 84
+  m_Constraints: 80
   m_CollisionDetection: 0
 --- !u!136 &1978206803
 CapsuleCollider:
@@ -506,8 +506,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9c0f0942fc47494cb32715bdc09bf60, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  worldChunkRadius: 20
-  chunkRenderDistanceRadius: 9
+  worldChunkRadius: 15
+  chunkRenderDistanceRadius: 14
   halfChunkSize: 1
   halfCellSize: 1
   cellPrefab: {fileID: 4562680253927747265, guid: b8d5b97a254a28b47ac31d01141bfc4f, type: 3}
