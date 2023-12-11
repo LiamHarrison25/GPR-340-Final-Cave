@@ -94,6 +94,7 @@ public class SpawnGrid : MonoBehaviour
     void Update()
     {
         PositionObjectPool(true);
+        //CheckIfPlayerIsInGrid();
     }
 
     //Generates the chunks in the world
@@ -101,7 +102,7 @@ public class SpawnGrid : MonoBehaviour
     {
         int x, y, z;
         int middleChunk = chunkSize;
-        int min = -(worldChunkRadius * chunkSize) + middleChunk;
+        int min = -(worldChunkRadius * chunkSize) + middleChunk; //add middle chunk to fix grid alignment issue
         int max = (worldChunkRadius * chunkSize) + middleChunk;
 
         for (x = min; x <= max; x += chunkSize)
@@ -214,15 +215,15 @@ public class SpawnGrid : MonoBehaviour
         }
     }
 
-    //void OnDrawGizmosSelected()
-    //{
-    //    foreach (var entry in chunks)
-    //    {
-    //        Gizmos.color = new Color(1f, 0f, 0f, 1f);
-    //        Gizmos.DrawWireCube((new Vector3(entry.Value.center.x, entry.Value.center.y, entry.Value.center.z)),
-    //            new Vector3(chunkSize, chunkSize, chunkSize));
-    //    }
-    //}
+    void OnDrawGizmosSelected()
+    {
+        foreach (var entry in chunks)
+        {
+            Gizmos.color = new Color(1f, 0f, 0f, 0.1f);
+            Gizmos.DrawWireCube((new Vector3(entry.Value.center.x, entry.Value.center.y, entry.Value.center.z)),
+                new Vector3(chunkSize, chunkSize, chunkSize));
+        }
+    }
 
     private void Checks()
     {
@@ -240,7 +241,7 @@ public class SpawnGrid : MonoBehaviour
             UnityEditor.EditorApplication.isPlaying = false;
         }
 
-        if(chunkRenderDistanceRadius >= worldChunkRadius)
+        if (chunkRenderDistanceRadius >= worldChunkRadius)
         {
             Debug.LogError("worldChunkRadius must be larger than chunkWorldRenderDistance");
             Application.Quit();
@@ -251,6 +252,8 @@ public class SpawnGrid : MonoBehaviour
 
     public void PositionObjectPool(bool checkForChunkChange)
     {
+        CheckIfPlayerIsInGrid();
+
         //check if player has moved, if so, continue
         if (checkForChunkChange)
         {
@@ -296,13 +299,20 @@ public class SpawnGrid : MonoBehaviour
         int i;
         for (i = 0; i < numChunksChanged; i++)
         {
+            //Adding the chunk
+            Vector3Int addChunkKey = chunkKeysToAdd.Pop();
+
+            //check if the chunk should move in case it spawns outside grid
+            if (!chunks.TryGetValue(addChunkKey, out Chunk chunk))
+            {
+                continue;
+            }
+
             //Removing the chunk
             Vector3Int removeChunkKey = chunkKeysToRemove.Pop();
             ChunkPrefab newChunk = chunkPrefabs[removeChunkKey];
             chunkPrefabs.Remove(removeChunkKey);
 
-            //Adding the chunk
-            Vector3Int addChunkKey = chunkKeysToAdd.Pop();
             newChunk.center = chunks[addChunkKey].center;
             newChunk.parentObject.transform.position = chunks[addChunkKey].center; // might be an issue later with vector 3 INT position
             chunkPrefabs.Add(addChunkKey, newChunk);
@@ -421,7 +431,33 @@ public class SpawnGrid : MonoBehaviour
             }
         }
     }
+
+    private void CheckIfPlayerIsInGrid()
+    {
+        //if key doesn't exist
+        Vector3Int playerPos = GridFunctions.QuantizeFloatToInt(player.transform.position, chunkSize);
+
+        Vector3Int upCheck = Vector3Int.one * chunkRenderDistanceRadius;
+        
+        if (chunks.TryGetValue(playerPos, out Chunk x)) 
+        {
+            Debug.Log("Is in grid");
+        }
+        else
+        {
+            Debug.Log(playerPos);
+            recallPlayerToLastChunk();
+        }
+    }
+
+    private void recallPlayerToLastChunk()
+    {
+        player.transform.position = playerOldChunk;
+        Debug.Log("Moved player back");
+    }
 }
+
+
 
 //foreach (Vector3Int key in cellsDic.Keys)
 //{
