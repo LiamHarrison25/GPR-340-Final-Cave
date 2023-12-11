@@ -16,6 +16,8 @@ public class SpawnGrid : MonoBehaviour
     private int cellSize;
     private int totalWorldRenderedChunks = 0;
 
+    private bool isGizmosEnabled = false;
+
     //test statistics
     private int totalWorldChunks;
     private int totalWorldRenderedCells;
@@ -86,6 +88,11 @@ public class SpawnGrid : MonoBehaviour
     void Update()
     {
         PositionObjectPool(true);
+
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            isGizmosEnabled = !isGizmosEnabled;
+        }
     }
 
     /// <summary>
@@ -225,12 +232,16 @@ public class SpawnGrid : MonoBehaviour
     /// </summary>
     void OnDrawGizmosSelected()
     {
-        foreach (var entry in chunks)
+        if (isGizmosEnabled)
         {
-            Gizmos.color = new Color(1f, 0f, 0f, 0.1f);
-            Gizmos.DrawWireCube((new Vector3(entry.Value.center.x, entry.Value.center.y, entry.Value.center.z)),
-                new Vector3(chunkSize, chunkSize, chunkSize));
+            foreach (var entry in chunks)
+            {
+                Gizmos.color = new Color(1f, 0f, 0f, 0.1f);
+                Gizmos.DrawWireCube((new Vector3(entry.Value.center.x, entry.Value.center.y, entry.Value.center.z)),
+                    new Vector3(chunkSize, chunkSize, chunkSize));
+            }
         }
+        
     }
 
     /// <summary>
